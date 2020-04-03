@@ -1,0 +1,9 @@
+# TypeScript
+## TypeScript基础语法
+### TypeScript程序由以下几个部分组成：
+1. 模块
+2. 函数
+3. 变量
+4. 语句和表达式
+5. 注释
+### TypeScript区分大小写
