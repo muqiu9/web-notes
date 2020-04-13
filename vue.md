@@ -192,3 +192,37 @@ getUserInfo(){
   return this.$store.dispatch(‘getUserInfo’)
 }
 ```
+- 
+```javascript
+export default new Vuex.Store({
+ state: { 
+  nickname: '',
+  age:0,
+  gender: '',
+  money:0
+ },
+ mutations: {
+  setUerInfo(state,payLoad){
+   state.nickname = payLoad.nickname
+   state.age = payLoad.age
+   state.gender = payLoad.gender
+   state.money = payLoad.money
+  }
+},
+actions: { //actions没有提供state当参数
+ async getToken({commit}){
+   var res = await axios.get('/token接口')
+   commit('setToken',res)
+ },
+async getUserInfo(context){ 
+//context可以理解为它是整个Store的对象.类似于this.$store，
+他里面包含了state，getter，mutations，actions
+  const res = await axios.get('/接口url')
+  context.commit('setUerInfo',res) 
+//相当于 this.$store.commit,第一个参数是方法名，第二个参数是要传入的数据
+  context.dispatch('getToken') 
+//actions也可以调用自己的其他方法
+    },
+  }
+})
+```
