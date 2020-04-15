@@ -1,4 +1,191 @@
 # VUE使用笔记
+## 安装模块的时候使用npm加载慢，可以使用淘宝镜像
+```
+// 尽量不要使用cnpm，可能会有各种各样的bug
+npm install --registry=https://registry.npm.taobao.org
+```
+## 一个vue项目的安装、router配置、store配置完整步骤
+### 第一步：使用vue-cli安装vue项目，router和store另自行安装配置
+### 第二步：安装配置router
+1. 安装router
+```
+npm i vue-router --save-dev
+```
+2. 配置router
+  - 在src文件夹下新建router文件夹 --> index.js
+  ```
+  src
+    - router
+      - index.js
+  ```
+  - 在src -> router -> index.js中配置
+  ```javascript
+  // 1. 引入vue和vue-router
+  import Vue from 'vue'
+  import Router from 'vue-router'
+  // 模块路由可以写在其他的文件夹下，在index.js中引入即可
+  import routes from './modules/routes'
+  // 2. 在vue中使用router
+  Vue.use(Router)
+
+  // 3. 创建一个router
+  const router = new Router ({
+    mode: 'history',
+    routes
+  })
+
+  // 4. 导航前置守卫与导航后置守卫
+  // 设置路由导航前置守卫，进入路由前的操作
+  router.beforeEach((to, from, next) => {
+    // to: 即将前往的页面路由
+    // from: 即将离开的页面路由
+    // next: 必须含有，进行页面跳转
+    console.log(to, from, next)
+    // 在这里面可以进行路由菜单的获取
+  })
+
+  // 导航后置守卫，进入路由后的操作
+  router.afterEach(() => {
+    // loadingInstance.close()
+  })
+
+  // 5. 将路由导出即可
+  export default router
+  ```
+### 第三步：状态管理(vuex)的安装与配置
+1. 安装vuex
+```
+npm i vuex --save-dev
+```
+2. vuex的介绍
+  - State：单一状态树，用来存储数据，和vue中的data有着相同的规则；
+  ```javascript
+  state: {
+    name: 'zhangsan',
+    age: 18
+  }
+  ```
+  - Getter：有时候需要从store中的state派生出一些状态，例如对列表数据进行筛选及计算，Getter接受state作为其第一个参数；
+  ```javascript
+  getters: {
+    age: state => {
+      return state.age + 2 // 20 
+    }
+  }
+  // 但是在一般使用中吧getters都可以放到一个文件中，这样在使用数据的时候能够更加明了，下面再进行介绍
+  ```
+  - Mutation：更改vuex中state中的状态的唯一方法就是提交mutation，mutation接受s't
+  state作为其第一个参数
+  ```javascript
+  mutations: {
+    SET_NAME: (state, name) => {
+      state.name = name
+    }
+  }
+  ```
+  - Action：Action可以包含任意异步操作，mutation是同步操作，action变更状态只能提交mutation进而改变状态
+  ```javascript
+  actions: {
+    SetName ({ commit }, name) {
+      commit('SET_NAME', name)
+    }
+  }
+  ```
+  - Mudule：Vuex 允许我们将 store 分割成模块（module）
+  ```javascript
+  const moduleA = {
+    state: { ... },
+    mutations: { ... },
+    actions: { ... },
+    getters: { ... }
+  }
+
+  const moduleB = {
+    state: { ... },
+    mutations: { ... },
+    actions: { ... }
+  }
+
+  const store = new Vuex.Store({
+    modules: {
+      a: moduleA,
+      b: moduleB
+    }
+  })
+
+  store.state.a // -> moduleA 的状态
+  store.state.b // -> moduleB 的状态
+  ```
+### vuex的具体配置
+- 目录
+```
+store
+  - modules
+    - app.js
+  - getters.js
+  - index.js
+```
+```javascript
+// app.js
+const app = {
+  namespace: true,  // 命名空间
+  state: {
+    name: 'zhangsan',
+    age: 18
+  },
+  mutations: {
+    SET_NAME: (state, name) => {
+      state.name = name
+    }
+  },
+  actions: {
+    SetName ({ commit }, name) {
+      commit('SET_NAME', name)
+    }
+  }
+}
+
+export default app
+```
+```javascript
+// getters.js
+const getters = {
+  name: state => state.app.name
+}
+
+export default getters
+
+```
+```javascript
+// index.js
+import Vue from 'vue'
+import Vuex from 'vuex'
+import app from './modules/app'
+import getters from './getters'
+Vue.use(Vuex)
+
+const store = new Vuex.Store({
+  modules: {
+    app
+  },
+  getters
+})
+
+export default store
+```
+### main.js中引入
+```javascript
+import router from '@/router'
+import store from '@/store'
+
+new Vue({
+  el: '#app',
+  router,
+  store,
+  components: { App },
+  template: '<App/>'
+})
+```
 ## 路由的懒加载
 - 在路由组件的调用时，当有很多路由组件的时候，我们需要设置路由懒加载，但是当在开发环境下，较多的路由可能会导致路由加载较慢，所有应该分环境进行路由组件的加载。
 1. 在路由文件夹下新建开发环境映入方式（_import_development.js）和生成环境（_import_production.js）引入方式
@@ -226,3 +413,5 @@ async getUserInfo(context){
   }
 })
 ```
+
+## vue中的插槽--slot
