@@ -75,7 +75,7 @@ npm i vuex --save-dev
   // 但是在一般使用中吧getters都可以放到一个文件中，这样在使用数据的时候能够更加明了，下面再进行介绍
   ```
   - Mutation：更改vuex中state中的状态的唯一方法就是提交mutation，mutation接受s't
-  state作为其第一个参数
+    state作为其第一个参数
   ```javascript
   mutations: {
     SET_NAME: (state, name) => {
@@ -415,3 +415,15 @@ async getUserInfo(context){
 ```
 
 ## vue中的插槽--slot
+
+## 配置Sass
+```
+npm i sass --save-dev
+npm i sass-loader@7.3.1 --save-dev
+// 一般只需要上面两个即可
+npm i style-loader --save-dev
+npm i stylus-loader --save-dev
+
+npm i node-sass --save-dev
+npm i css-loader --save-dev
+```
