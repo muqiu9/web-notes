@@ -46,4 +46,15 @@ package.json  // webpack配置和项目包管理文件
 README.md // 这个文件是对项目的说明
 yarn.lock // 锁定安装时的版本号，保证每一个人在yarn install时大家的依赖一致，这里使用的是yarn安装，所以文件名为yarn.lock，如果使用npm安装，文件名为package-lock.json
 ```
-## 从零开始第一个hello world程序
+## 第一个hello world程序
+<strong>把src目录下的文件全部删除，开始编写hello world程序</strong>
+- 
+1. 创建入口文件index.js
+```javascript
+// 引入react和react-dom
+import React from 'react'
+import ReactDOM from 'react-dom'
+import Fruits from './Fruits'
+
+ReactDOM.render(<Fruits />, document.getElementById('root'))
+```

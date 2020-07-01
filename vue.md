@@ -414,6 +414,59 @@ async getUserInfo(context){
 })
 ```
 
+## 在非父子组件通信时，可以使用通常的bus或者使用vuex，但是实现的功能不是太复杂，而使用上面两个又有点繁琐。这是，observable就是一个很好的选择
+- observable 官方定义是让一个对象可响应。Vue内部会用他来处理data函数返回的对象。
+- 返回的对象可以直接用于渲染函数和计算属性内，并且在发生改变时触发响应的更新。可用于简单的场景
+
+### 此处以一个例子进行描述
+```javascript
+// 可以在src根目录下创建 store文件夹 -> index.js文件，在index.js文件中写入一下内容
+// 引入vue
+import Vue from 'vue
+// 创建state对象，使用observable让state对象可响应
+export let state = Vue.observable({
+  name: '张三',
+  'age': 38
+})
+// 创建对应的方法
+export let mutations = {
+  changeName(name) {
+    state.name = name
+  },
+  setAge(age) {
+    state.age = age
+  }
+}
+// 现在我们的可相应对象及其对应的操作方法创建成功，接下来直接在vue文件中引入使用即可
+```
+```javascript
+<template>
+  <div>
+    姓名：{{ name }}
+    年龄：{{ age }}
+    <button @click="changeName('李四')">改变姓名</button>
+    <button @click="setAge(18)">改变年龄</button>
+  </div>
+</template>
+import { state, mutations } from '@/store
+export default {
+  // 在计算属性中拿到值
+  computed: {
+    name() {
+      return state.name
+    },
+    age() {
+      return state.age
+    }
+  },
+  // 调用mutations里面的方法，更新数据
+  methods: {
+    changeName: mutations.changeName,
+    setAge: mutations.setAge
+  }
+}
+```
+
 ## vue中的插槽--slot
 
 ## 配置Sass
