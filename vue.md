@@ -467,6 +467,72 @@ export default {
 }
 ```
 
+## VUE+ElementUI中为el-select添加滚动加载事件
+- 当一个下拉框的数据有很多时，如果我们直接把所有的数据渲染出来，肯定是不现实的，不仅加载慢还影响性能，所以需要对下拉框做滚动加载的处理
+### 知识拓展  Vue.directive(id, [definition])，注册或获取全局指令，不做过多解释
+- 添加滚动加载事件，就需要注册一个全局指令
+```javascript
+// 注册滚动条加载触发事件v-loadmore绑定
+// 直接在 main.js 中引入即可
+Vue.directive('loadmore', {
+  bind (el, binding) {
+    // 获取element-ui定义好的scroll盒子
+    const SELECTWRAP_DOM = el.querySelector('.el-select-dropdown .el-select-dropdown__wrap')
+    SELECTWRAP_DOM.addEventListener('scroll', function () {
+      const CONDITION = this.scrollHeight - this.scrollTop <= this.clientHeight
+      if (CONDITION) {
+        binding.value()
+      }
+    })
+  }
+})
+```
+- 下面附上官方用法
+```javascript
+// 注册
+Vue.directive('my-directive', {
+  bind: function () {},
+  inserted: function () {},
+  update: function () {},
+  componentUpdated: function () {},
+  unbind: function () {}
+})
+
+// 注册 (指令函数)
+Vue.directive('my-directive', function () {
+  // 这里将会被 `bind` 和 `update` 调用
+})
+
+// getter，返回已注册的指令
+var myDirective = Vue.directive('my-directive')
+```
+#### 参考<a href="https://cn.vuejs.org/v2/guide/custom-directive.html" target="_blank">自定义指令</a>
+
+### 指令定义完了，具体怎么用呢
+```javascript
+// 在el-select组件里面使用
+<el-select
+  v-model="incomValue"
+  filterable  // 开启搜索
+  clearable // 清空
+  remote  // 开启远程搜索
+  v-loadmore="incomLoadmore"  // 触底滚动加载事件
+  :loading="loading"
+  :remote-method="remoteMethod" // 远程搜索
+  @change="incomChange" // 值改变事件
+  @clear="incomClear" // 清空事件
+>
+  <el-option
+    v-for="item in incomList"
+    :key="item.fdictionaryDetailedID"
+    :value="item.fname"
+    :label="item.fname"
+  />
+</el-select>
+// 在对应的事件中执行对应的方法，每次触底新加载一页
+// 下拉框滚动加载完成
+```
+
 ## vue中的插槽--slot
 
 ## 配置Sass
