@@ -5,7 +5,29 @@
 npm install koa --save
 ```
 
+### 常用中间件
+
+1. koa-bodyparser  请求体解析
+
+便于获取请求参数
+
+```
+npm i koa-bodyparser --save
+```
+
+2. jsonwebtoken	koa-jwt	token鉴权
+
+用户生成和验证token
+
+```
+npm i jsonwebtoken --save
+npm i koa-jwt --save
+```
+
+
+
 ## koa的入门使用
+
 ```javascript
 // 引入koa
 const Koa = require('koa')
@@ -621,3 +643,121 @@ const query = (sql) => {
 }
 ```
 
+## Koa2使用JWT进行鉴权
+
+> Json Web Token 简称JWT，它定义了一种简洁、自包含的用于通信双方之间以JSON对象的形式安全传递信息的方法。JWT可以使用HAMC算法或者时RSA的公钥密钥对进行签名。
+
+![img](https://pic3.zhimg.com/80/v2-2d70ab1b6246a93cb09408cc231fb7c7_720w.jpg)
+
+1. 首先用户登录时，输入用户名和密码后请求服务器登录接口，服务器验证用户密码正确后，生成token并返回给前端，前端存储token，并在后面的请求中把token带在请求头中传给服务器，服务器验证token有效，返回正确的数据
+2. 既然服务器端使用Koa2框架进行开发，除了要使用jsonwebtoken库之外，还要使用一个koa-jwt中间件，该中间件针对Koa对jsonwebtoken进行了封装，使用起来更加方便。
+
+### 生成token
+
+```javascript
+const router = require('koa-router')()
+const jwt = require('jsonwebtoken')
+// 此处只显示部分代码
+// 1.根据用户名和密码进行登录，判断是否存在对应的用户信息，如果没有直接返回没有的相关信息，有则生成token并返回
+// 2.生成token    假设resule是查询到的用户信息  含有字段 id 和 name
+const token = jwt.sign({
+    name: result.name,
+    id: result.id
+}, 'my_token', { expiresIn: '2h' })
+// token即为我们生成的token
+```
+
+在验证了用户名密码正确之后，调用jsonwebtoken的sign()方法来生成token，接收三个参数，第一个是载荷，用于编码后存储在token中的数据，也是验证token后可以拿到的数据；第二个是密钥，自己定义的，验证的时候也是要相同的密钥才能解码；第三个是options，可以设置token的过期时间。
+
+### 获取token
+
+调用登录接口，待登录成功之后则会返回token，然后把token存在本地，在请求服务器API的时候，把token带在请求头中传给服务器进行验证。
+
+### 验证token
+
+通过koa-jwt中间件进行验证。
+
+```javascript
+const koa = require('koa')
+const koajwt = require('koa-jwt')
+const app = new koa()
+
+// 错误处理
+app.use((ctx, next) => {
+    return next().catch((err) => {
+        if(err.status === 401){
+            ctx.status = 401;
+            ctx.body = 'Protected resource, use Authorization header to get access\n';
+        }else{
+            throw err;
+        }
+    })
+})
+
+app.use(koajwt({
+    secret: 'my_token'
+}).unless({
+    path: [/\/user\/login/]
+}));
+```
+
+通过app.use来调用该组件，并传入密钥`{secret: 'my_token'}`,unless可以指定哪些url不需要进行token验证。token验证失败的时候会抛出401错误，因此需要添加错误处理，而且要放在`app.use(koajwt())`之前，否则不执行。
+
+如果请求时没有token或者token过期，则返回401.
+
+### 解析koa-jwt
+
+```javascript
+module.exports = function resolveAuthorizationHeader(ctx, opts) {
+    if (!ctx.header || !ctx.header.authorization) {
+        return;
+    }
+    const parts = ctx.header.authorization.split(' ');
+    if (parts.length === 2) {
+        const scheme = parts[0];
+        const credentials = parts[1];
+        if (/^Bearer$/i.test(scheme)) {
+            return credentials;
+        }
+    }
+    if (!opts.passthrough) {
+        ctx.throw(401, 'Bad Authorization header format. Format is "Authorization: Bearer <token>"');
+    }
+};
+```
+
+判断请求头中是否带了authorization，如果有，将token从authorization中分离出来。如果没有authorization，则代表客户端没有传token到服务器，这时候就抛出401错误状态。
+
+### verify.js
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+module.exports = (...args) => {
+    return new Promise((resolve, reject) => {
+        jwt.verify(...args, (error, decoded) => {
+            error ? reject(error) : resolve(decoded);
+        });
+    });
+};
+```
+
+在verify.js中，使用jsonwebtoken提供的verify()方法进行验证并返回结果。jsonwebtoken的sign()方法是用来生成token的，二verify()方法则是用来认证和解析token。如果token无效，则会在此方法被验证出来。
+
+### index.js
+
+```javascript
+const decodedToken = await verify(token, secret, opts);
+if (isRevoked) {
+	const tokenRevoked = await isRevoked(ctx, decodedToken, token);
+	if (tokenRevoked) {
+		throw new Error('Token revoked');
+	}
+}
+ctx.state[key] = decodedToken;  // 这里的key = 'user'
+if (tokenKey) {
+	ctx.state[tokenKey] = token;
+}
+```
+
+在index.js中，调用verify.js的方法进行验证并解析token，拿到上面进行sign()的数据`{name: resule.name, id: result.id}`，并赋值给`ctx.state.user`，在控制器中便可以直接通过`ctx.state.user`拿到`name`和`id`。

@@ -439,7 +439,7 @@ export let mutations = {
 }
 // 现在我们的可相应对象及其对应的操作方法创建成功，接下来直接在vue文件中引入使用即可
 ```
-```javascript
+```vue
 <template>
   <div>
     姓名：{{ name }}
@@ -469,7 +469,7 @@ export default {
 
 ## VUE+ElementUI中为el-select添加滚动加载事件
 - 当一个下拉框的数据有很多时，如果我们直接把所有的数据渲染出来，肯定是不现实的，不仅加载慢还影响性能，所以需要对下拉框做滚动加载的处理
-### 知识拓展  Vue.directive(id, [definition])，注册或获取全局指令，不做过多解释
+### 知识拓展  Vue.directive(id, [definition])，注册或获取全局指令，不作过多解释
 - 添加滚动加载事件，就需要注册一个全局指令
 ```javascript
 // 注册滚动条加载触发事件v-loadmore绑定
@@ -509,7 +509,7 @@ var myDirective = Vue.directive('my-directive')
 #### 参考<a href="https://cn.vuejs.org/v2/guide/custom-directive.html" target="_blank">自定义指令</a>
 
 ### 指令定义完了，具体怎么用呢
-```javascript
+```vue
 // 在el-select组件里面使用
 <el-select
   v-model="incomValue"
@@ -546,3 +546,30 @@ npm i stylus-loader --save-dev
 npm i node-sass --save-dev
 npm i css-loader --save-dev
 ```
+
+## vue开发中怎么区分依赖的归属
+
+- vue开发过程中，哪些依赖可以划分为开发依赖呢？
+
+1. **构建工具**
+
+比如webpack、webpack-cli、rollup等等。构建工具是为了生成生产环境的代码，在线上使用的代码也是他们工作的结果，也就是说在线上时，并不需要他们，因此他们可以归为开发依赖。
+
+当然他们衍生出来的插件，如xxx-webpack-plugin，也属于开发依赖。
+
+2. **预处理器**
+
+指的是对源代码进行一定的处理并生成最终代码的工具，常见的有css的less、scss、sass、stylus，js中的typescript、coffee-script、babel等等。
+
+以babel为例，常见的有两种方式。其一是内嵌在webpack或者rollup构建工具中，一般以loader或者plugin的形式出现，例如babel-loader。其二是单独使用（小项目较多），例如babel-cli。babel还额外有自己的插件体系，例如xxx-babel-plugin。类似的，less也有与之对应的less-loader和lessc。这些都算作开发依赖。
+
+在babel中还有一个注意点，那就是babel-runtime是dependencies而不是devDependencies。
+
+3. **测试工具**
+
+当然在线上时是用不到测试工具的，因此他们归入开发依赖，常见如chai、e2e等等。
+
+4. **其他**
+
+最后一类很难概括，是开发时需要使用的，实际上显示要么是已经打包成最终代码了，要么是不需要了。比如webpack-dev-server支持开发热加载，线上是不用的；babel-register因为性能原因也不能用在线上。其他还可能和具体业务相关。
+
