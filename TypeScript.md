@@ -1,4 +1,18 @@
 # TypeScript
+
+## vsCode中自动编译TypeScript
+
+1. 安装typescript
+
+```
+npm install -g typescript
+```
+
+安装完成后，可在命令行输入`tsc -Version`查看ts版本
+
+2. 命令行执行命令`tsc -init`会生成`tscconfig.json`配置文件。打开该文件修改： outDir 注释去掉，值为编译文件生成的目录。 
+3.  点击菜单 Terminal->Run Build Task（任务->运行任务） 选择 tsc：watch（监视）`-tsconfig.json `然后就可以自动生成代码 
+
 ## 基础类型
 ### 介绍
 数据单元：数字，字符串，结构体，布尔值等。Typescript支持与Javascript几乎相同的数据类型，此外还提供了实用的枚举类型方便使用。

@@ -1,4 +1,4 @@
-# VUE使用笔记
+# VUE笔记
 ## 安装模块的时候使用npm加载慢，可以使用淘宝镜像
 ```
 // 尽量不要使用cnpm，可能会有各种各样的bug
@@ -209,6 +209,9 @@ export default new Router({
 ```
 
 ## vuex的相关使用
+
+<a href="#mapState">mapState</a>,<a href="#mapActions">mapActions</a>,<a href="#mapGetters">mapGetters</a>,<a href="#mapMutations">mapMutations</a>
+
 ### vuex中数据的调用
 ```javascript
 import Vue from 'vue'
@@ -220,17 +223,39 @@ export default new Vuex.Store({
     age:20,
     gender:'男'
   },
-  mutations: {},
-  actions: {},
-  modules: {}
+  mutations: {
+      setAge(state, age) {
+          state.age = age	// 修改状态
+      }
+  },
+  getters: {
+      // 类似mutations
+      welcome(state) {
+          return state.nickname + '欢迎回来'
+      }
+  },
+  actions: {
+      login({ commit }, username) {
+          // login默认接收第一个参数vuex实例，从中可以分离出{ commit, dispatch }可供使用
+          return new Promise(() => {	// 模拟异步登录
+              setTimeout((resolve) => {
+                  commit(username)	// 得到数据后提交mutations
+                  resolve(true)
+              }, 1000)
+          })
+      }
+  },
+  modules: {},	// 用于分割模块
+  strict: true	// 严格模式，可防止用户手动修改，详细介绍见下文
 })
 ```
-1. state
-- 可以直接在vue元素上添加
+使用
+
+- 可以直接在vue元素上直接调用状态值
 ```html
 <div class="home">{{ $store.state.nickname }}</div>
 ```
-- 在computed中添加
+- 在computed中添加返回状态值
 ```javascript
 <template>
   <div class="home">
@@ -249,31 +274,151 @@ export default {
 </script>
 ```
 
-2. 使用mapState辅助函数
-- 需要vue中引入 mapState
+- 更改状态值的方法
+
+1. 通过mutations调用对应方法更改状态值
+
+```javascript
+// 在.vue文件中使用
+this.$store.commit('setAge', 18)
+
+// 在.js文件中使用，	首先需要引入store
+import store from '@/store'
+store.commit('setAge', 18)
+```
+
+2. 遇到异步交互时更改状态值
+
+vuex规定更改 Vuex 的 store 中的状态的唯一方法是提交 mutation，所以还是需要调用mutations的方法，但是需要的一些异步方法不能在mutations里面进行。
+
+vuex提供了actions供我们去对数据进行处理。
+
+```javascript
+// .vue文件中调用actions方法
+this.$store.dispatch('login', 'admin').then(res => {})
+```
+
+### 模块化
+
+> Vuex 允许我们将 store 分割成**模块（module）**。每个模块拥有自己的 state、mutation、action、getter、甚至是嵌套子模块——从上至下进行同样方式的分割
+
+上方代码分割成模块
+
+```javascript
+// store/index.js
+import Vue from 'vue'
+import Vuex from 'vuex'
+import user from './user'
+
+Vue.use(Vuex)
+
+export default new Vuex.Store({
+  modules: {
+    user
+  },
+  // strict: true  // 严格模式，防止用户手动更改状态
+  strict: process.env.NODE_ENV !== 'production'
+  /* 但是尽量不要在生产环境下使用严格模式，严格模式会深度检测状态树来检测不合格的状态变更，在发布环境下关闭严格模式，以避免性能损失 */
+})
+
+```
+
+```javascript
+// user.js
+export default {
+    namespaced: true,	// 设置命名空间，可便于准确定位到状态值，防止各个模块状态值的污染
+    state: { //存放状态
+        nickname:'zhangsan',
+        age:20,
+        gender:'男'
+    },
+    mutations: {
+        setAge(state, age) {
+            state.age = age	// 修改状态
+        }
+    },
+    actions: {
+        login({ commit }, username) {
+            // login默认接收第一个参数vuex实例，从中可以分离出{ commit, dispatch }可供使用
+            return new Promise(() => {	// 模拟异步登录
+                setTimeout((resolve) => {
+                    commit(username)	// 得到数据后提交mutations
+                    resolve(true)
+                }, 1000)
+            })
+        }
+    }
+}
+```
+
+- 当加上命名空间后，数据获取的时候就可以携带上名称，名称和`modules`中定义的名字一样，
+
+如：
+
+```javascript
+this.$store.state.user.nickname
+
+this.$store.dispatch('user/login')
+```
+
+
+
+### vuex中的映射方法
+
+> 此处演示的例子均为`namespace:true`的情况
+
+1. 使用<a name="mapState">mapState</a>辅助函数
+
 ```javascript
 import {mapState} from 'vuex'
 export default {
   name: 'home',
-  computed: mapState(['nickname','age','gender']) // 可直接使用
+  computed: {
+      ...mapState('user', ['nickname','age','gender'])	// 可直接使用
+  } 
 }
 ```
+2. <a name="mapActions">mapActions</a>
+
 ```javascript
-mapState(['nickname','age','gender'])
-// 类似于
-nickname(){return this.$store.state.nickname}
-age(){return this.$store.state.age}
-gender(){return this.$store.state.gender}
+import { mapActions } from 'vuex'
+methods: {
+    // ...mapActions('user', ['login']) //为了避免和状态值重名，也可以使用完整路径，如下
+    ...mapActions(['user/login'])
+}
+// 在使用的时候
+this['user/login']('admin').then(res => {})
 ```
-- 当vuex模块较多时，可以设置store属性namespace: true，然后在调用的时候表示出来自哪个模块
+
+3. <a name="mapGetters">mapGetters</a>
+
+- 使用方法类似mapState
+
 ```javascript
-mapState{
-  nickname: state => state.app.nockname,
-  age: state => state.app.age
+import { mapGetters } from 'vuex'
+computed: {
+    ...mapGetters('user', ['welcome'])
 }
 ```
 
-3. getters
+4. <a name="mapMutations">mapMutations</a>
+
+- 和mapActions类似
+
+```javascript
+import { mapMutations } from 'vuex'
+methods: {
+    ...mapMutations(['user/login'])
+}
+
+// 在使用的时候
+this['user/login']('admin').then(res => {})
+```
+
+### 各属性介绍
+
+#### getters
+
 - getters属于vuex中的计算属性，通过getters进一步处理，允许传参，第一个参数就是state
 ```javascript
 import Vue from 'vue'
@@ -312,7 +457,8 @@ computed: {
 }
 ```
 
-4. Mutation
+#### Mutations
+
 - mutations需要通过commit来调用其里面的方法，它也可以传入参数，第一个参数是state，第二个参数是载荷（payLoad），也就是额外的参数
 ```javascript
 mutations: { //类似于methods
@@ -337,7 +483,7 @@ methods:{
 }
 ```
 
-- mapMutations  : 跟mapState和mapGetters一样
+- mapMutations  : 跟mapActions一样
 ```javascript
 methods:{
  ...mapMutations(['addAge'])
@@ -349,7 +495,8 @@ methods: {
   }
 }
 ```
-### action
+#### actions
+
 - action中属于一部操作，mutations属于同步操作
 - action不要直接取操纵state，是通过操作mutations进而去改变state里面的值
 - action中的方法默认的就是异步，并且返回promise
@@ -572,4 +719,10 @@ npm i css-loader --save-dev
 4. **其他**
 
 最后一类很难概括，是开发时需要使用的，实际上显示要么是已经打包成最终代码了，要么是不需要了。比如webpack-dev-server支持开发热加载，线上是不用的；babel-register因为性能原因也不能用在线上。其他还可能和具体业务相关。
+
+
+
+## 
+
+## v-model和sync双向绑定
 
