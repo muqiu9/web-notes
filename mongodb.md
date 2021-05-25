@@ -238,4 +238,114 @@ result.forEach(function(result){
 >
 > 2、使用mongo命令进入mongodb终端，使用load(文件名)执行js文件
 >
->  
+
+## 索引
+
+> 建立索引目的是为了提高查询性能，但是索引这东西是要消耗硬盘和内存资源的，所以还是要根据实际需要进行建立了。
+
+```javascript
+// 建立索引
+db.randomInfo.ensureIndex({username:1})
+// 查看现有索引
+db.randomInfo.getIndexes()
+```
+
+- 索引数量不会超过64个
+
+### 复合索引
+
+```javascript
+// 两个索引同时查询，MongoDB的复合查询是按照我们的索引顺序进行查询的，就是我们用 db.randomInfo.getIndexes()查询出来的数组
+db.randomInfo.find({username:'7xwb8y3',randNum0:565509})
+// 自己指定索引优先级，这个方法就是hint()
+var  rs= db.randomInfo.find({username:'7xwb8y3',randNum0:565509}).hint({randNum0:1});
+// 删除索引
+db.randomInfo.dropIndex('randNum0_1');//索引的唯一ID
+```
+
+### 全文检索
+
+```javascript
+// 建立全文索引
+db.info.ensureIndex({contextInfo:'text'})
+```
+
+- $text：表示要在全文索引中查东西
+- $search：后面跟查找的内容
+
+```javascript
+// 我们希望查找数据中有programmer，family，diary，drink的数据（这是或的关系）
+db.info.find({$text:{$search:"programmer family diary drink"}})
+// 我们希望不查找出来有drink这个单词的记录，我们可以使用“-”减号来取消。
+dbd .info.find({$text:{$search:"programmer family diary -drink"}})
+```
+
+<b>转义符</b>
+
+> 全文搜索中是支持转义符的，比如我们想搜索的是两个词（love PlayGame和drink），这时候需要使用\斜杠来转意
+
+```javascript
+db.info.find({$text:{$search:"\"love PlayGame\" drink"}})
+```
+
+## 用户的创建、删除与修改
+
+- 创建用户可以用db.createUser方法来完成
+
+```javascript
+db.createUser({
+    user:"luckiest",
+    pwd:"123456",
+    customData:{
+        name:'小二郎',
+        email:'1747320175@qq.com',
+        age:18,
+    },
+    roles:['read']
+})
+```
+
+- 还可以单独配置一个数据库的权限，比如我们现在要配置compay数据库的权限为读写：
+
+```javascript
+db.createUser({
+    user:"luckiest",
+    pwd:"123456",
+    customData:{
+        name:'小二郎',
+        email:'1747320175@qq.com',
+        age:18,
+    },
+     roles:[
+        {
+            role:"readWrite",
+            db:"company"
+        },
+        'read'
+    ]
+})
+```
+
+### 内置角色
+
+内置角色：
+
+1. 数据库用户角色：read、readWrite；
+2. 数据库管理角色：dbAdmin、dbOwner、userAdmin;
+3. 集群管理角色：clusterAdmin、clusterManager、clusterMonitor、hostManage；
+4. 备份恢复角色：backup、restore；
+5. 所有数据库角色：readAnyDatabase、readWriteAnyDatabase、userAdminAnyDatabase、dbAdminAnyDatabase
+6. 超级用户角色：root
+7. 内部角色：__system
+
+```javascript
+// 查找用户信息， 我们直接可以使用查找的方法，查找用户信息
+db.system.users.find()
+// 删除用户，直接用remove就可以删除这个用户的信息和权限。
+db.system.users.remove({user:"luckiest"})
+// 建权：有时候我们要验证用户的用户名密码是否正确，就需要用到MongoDB提供的健全操作。也算是一种登录操作，不过MongoDB把这叫做建权。
+db.auth("luckiest","123456") // 如果正确返回1，如果错误返回0。（Error：Authentication failed。）
+// 启动建权，重启MongoDB服务器，然后设置必须使用建权登录。
+mongod --auth // 启动后，用户登录只能用用户名和密码进行登录，原来的mongo形式链接已经不起作
+```
+
