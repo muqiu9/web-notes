@@ -118,3 +118,43 @@ export default defineComponent({
 </teleport>
 ```
 
+# suspense - 异步请求组件
+
+```html
+<!-- 实现一个异步组件 -->
+<template>
+  <h1>{{ result }}</h1>
+</template>
+<script lang="ts">
+import { defineComponent } from "vue";
+export default defineComponent({
+  setup() {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        return resolve({ result: "JSPang" });
+      }, 2000);
+    });
+  },
+});
+</script>
+```
+
+- 使用suspense来控制状态的输出和显示
+
+```html
+<template>
+  <div>
+    <Suspense>
+      <template #default>
+        <AsyncShow />
+      </template>
+      <template #fallback>
+        <h1>Loading...</h1>
+      </template>
+    </Suspense>
+  </div>
+</template>
+```
+
+> 可以看到`Suspense`是有两个`template`插槽的，第一个`default`代表异步请求完成后，显示的模板内容。`fallback`代表在加载中时，显示的模板内容。
+
