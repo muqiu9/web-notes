@@ -5,6 +5,7 @@
 - use collections：显示数据库中的集合
   - 当use的数据库不存在的时候，就会建立一个数据库
 - db：显示当前位置
+- db.createCollection(name, options)
 - db.集合.insert()：新建数据集合和插入文件，如果集合没有的话就会新建一个集合，如：`db.test.insert({"name": "zhangsan"})`，新建了一个集合test并向test集合中插入数据`{name: 'zhangsan'}`，批量插入使用数组即可
 - db.集合.find()：查询集合中的所有数据，如：`db.test.find()`，可传查询条件，如`db.test.find({name: 'zhangsan'})`
 - db.集合.findOne()：查询第一个文件数据
@@ -347,5 +348,23 @@ db.system.users.remove({user:"luckiest"})
 db.auth("luckiest","123456") // 如果正确返回1，如果错误返回0。（Error：Authentication failed。）
 // 启动建权，重启MongoDB服务器，然后设置必须使用建权登录。
 mongod --auth // 启动后，用户登录只能用用户名和密码进行登录，原来的mongo形式链接已经不起作
+// 登录
+mongo -u 用户名 -p 密码 ip地址+端口+数据库名
+mongo -u luckiest -p 123456 127.0.0.1:27017/admin
+```
+
+### 增加用户校验，用户登录方式
+
+windows修改mongod.cfg文件，如下内容：
+
+```
+security:
+  authorization: enabled
+```
+
+修改之后重启mongodb服务，以下命令登录：
+
+```
+mongo -u luckiest -p 123456 127.0.0.1:27017/admin
 ```
 
